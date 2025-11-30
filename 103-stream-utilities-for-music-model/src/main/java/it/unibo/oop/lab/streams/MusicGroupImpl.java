@@ -31,42 +31,57 @@ public final class MusicGroupImpl implements MusicGroup {
 
     @Override
     public Stream<String> orderedSongNames() {
-        return null;
+        return this.songs.stream().map(Song::getSongName).sorted();
     }
 
     @Override
     public Stream<String> albumNames() {
-        return null;
+        return this.albums.keySet().stream();
     }
 
     @Override
     public Stream<String> albumInYear(final int year) {
-        return null;
+        return this.albums.keySet().stream().filter(a -> this.albums.get(a) == year);
     }
 
     @Override
     public int countSongs(final String albumName) {
-        return -1;
+        return (int) this.songs.stream()
+        .filter(s -> s.getAlbumName().isPresent() && s.getAlbumName().get().equals(albumName))
+        .count();
     }
 
     @Override
     public int countSongsInNoAlbum() {
-        return -1;
+        return (int) this.songs.stream().filter(s -> !s.getAlbumName().isPresent()).count();
     }
 
     @Override
     public OptionalDouble averageDurationOfSongs(final String albumName) {
-        return OptionalDouble.empty();
+        return this.songs.stream()
+        .filter(s -> s.getAlbumName().isPresent() && s.getAlbumName().get().equals(albumName))
+        .mapToDouble(Song::getDuration)
+        .average();
     }
 
     @Override
     public Optional<String> longestSong() {
-        return Optional.empty();
+        return this.songs.stream()
+        .max((s1, s2) -> Double.compare(s1.getDuration(), s2.getDuration()))
+        .map(Song::getSongName);
     }
 
     @Override
     public Optional<String> longestAlbum() {
-        return Optional.empty();
+        return this.albums.keySet().stream()
+        .max((a1, a2) -> Double.compare(
+           this.songs.stream()
+           .filter(s -> s.getAlbumName().filter(name -> name.equals(a1)).isPresent()).mapToDouble(Song::getDuration)
+           .sum(),
+           this.songs.stream()
+           .filter(s -> s.getAlbumName().filter(name -> name.equals(a2)).isPresent()).mapToDouble(Song::getDuration)
+           .sum()
+        ));
     }
 
     private static final class Song {
