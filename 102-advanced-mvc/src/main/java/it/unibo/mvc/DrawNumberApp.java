@@ -1,24 +1,26 @@
 package it.unibo.mvc;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-
+import java.io.File;
 /**
  */
 public final class DrawNumberApp implements DrawNumberViewObserver {
-    private static final int MIN = 0;
-    private static final int MAX = 100;
-    private static final int ATTEMPTS = 10;
 
     private final DrawNumber model;
     private final List<DrawNumberView> views;
 
     /**
-     * @param views
-     *            the views to attach
+     * Constructor.
+     * 
+     * @param path the file path
+     * @param views the views to attach
      */
-    public DrawNumberApp(final DrawNumberView... views) {
+    public DrawNumberApp(final String path, final DrawNumberView... views) {
         /*
          * Side-effect proof
          */
@@ -27,7 +29,46 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
             view.setObserver(this);
             view.start();
         }
-        this.model = new DrawNumberImpl(MIN, MAX, ATTEMPTS);
+        Configuration.Builder setter = new Configuration.Builder();
+        try {
+            BufferedReader reader = new BufferedReader(new FileReader(new File(path)));
+            String line;
+            while ((line = reader.readLine()) != null){
+                String [] parts = line.split(":");
+                if(parts.length == 2){
+                    Integer value;
+                    switch (parts[0].trim().toLowerCase()) {
+                        case "minimum":
+                            value = Integer.parseInt(parts[1].trim());
+                            setter.setMin(value);
+                            break;
+                        case "maximum":
+                            value = Integer.parseInt(parts[1].trim());
+                            setter.setMax(value);
+                            break;
+                        case "attempts":
+                            value = Integer.parseInt(parts[1].trim());
+                            setter.setAttempts(value);
+                            break;
+
+                        default:
+                            displayError("one of the line in the file was not recognized");
+                            break;
+                    }
+                }
+            }
+            reader.close();
+        }catch (IOException | NullPointerException | NumberFormatException e) {
+            displayError(e.getMessage());
+        }
+        this.model = new DrawNumberImpl(setter.build());
+    }
+
+    public void displayError(final String message){
+        for (final DrawNumberView view: views){
+            view.displayError(message);
+            System.out.println("errore file"); 
+        }
     }
 
     @Override
@@ -66,7 +107,7 @@ public final class DrawNumberApp implements DrawNumberViewObserver {
      * @throws FileNotFoundException 
      */
     public static void main(final String... args) throws FileNotFoundException {
-        new DrawNumberApp(new DrawNumberViewImpl());
+        new DrawNumberApp("src/main/resources/config.yml", new DrawNumberViewImpl(), new DrawNumberViewImpl(), new PrintStreamView(System.out), new PrintStreamView(System.getProperty("user.home")+File.separator+"output.txt"));
     }
 
 }

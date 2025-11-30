@@ -31,7 +31,7 @@ public final class PrintStreamView implements DrawNumberView {
      * @throws FileNotFoundException 
      */
     public PrintStreamView(final String path) throws FileNotFoundException {
-        out = new PrintStream(new FileOutputStream(new File(path)));
+        out = new PrintStream(new FileOutputStream(new File(path),true));
     }
 
     @Override
@@ -56,6 +56,11 @@ public final class PrintStreamView implements DrawNumberView {
     @Override
     public void result(final DrawResult res) {
         out.println(res.getDescription());
+    }
+
+    @Override
+    public void displayError(String message) {
+        out.println(message);
     }
 
 }
